@@ -36,12 +36,71 @@ public class client extends javax.swing.JFrame {
     private String destination = "d:/";
     private File f;
     private ArrayList<String> rcpt = new ArrayList<>();
+    private boolean connectFlag = false;
     /**
      * Creates new form client
      */
     public client() {
         initComponents();
         this.setEnabling(false);
+    }
+    
+    private void connectTo()
+    {
+        try {
+            if ((uname.getText().equals("") || ipserver.getText().equals(""))){
+                throw new Exception("Silahkan isi username dan alamat server terlebih dahulu",null);
+            }
+            server = new Socket(ipserver.getText(),6060);
+            bos = new BufferedOutputStream(server.getOutputStream());
+            oos = new ObjectOutputStream(server.getOutputStream());
+            ois = new ObjectInputStream(server.getInputStream());
+            uname.setEnabled(false);
+            this.setEnabling(true);
+            oos.writeUTF(uname.getText());
+            oos.flush();
+            
+            String msg;
+            msg = ois.readUTF();
+            File file = new File("D:/" + uname.getText());
+            if (!file.exists()) {
+                if (file.mkdir()) {
+                        System.out.println("Directory is created!");
+                } else {
+                        System.out.println("Failed to create directory!");
+                }
+            }
+            System.out.println(msg);
+            changeTitle("Simple File Sharing (Client :" + uname.getText() +")");
+            connectFlag = true;
+            
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(null,"Server sedang offline");
+            connectFlag = false;
+        }
+        catch (Exception e){
+            JOptionPane.showMessageDialog(null,e.getMessage());
+            connectFlag = false;
+        }
+    }
+    
+    private void disconnectFrom(){
+        try {
+            oos.writeUTF("QUIT");
+            oos.flush();
+            server.close();
+            this.setEnabling(false);
+            conn.setEnabled(true);
+            uname.setEnabled(true);
+            connectFlag = false;
+        } catch (IOException ex) {
+            Logger.getLogger(client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    private void changeTitle(String newTitle)
+    {
+        this.setTitle(newTitle);
     }
     private void setEnabling(boolean param){
         rcptList.setEnabled(param);
@@ -56,7 +115,6 @@ public class client extends javax.swing.JFrame {
         rfshInbox.setEnabled(param);
         rtrvBtn.setEnabled(param);
         clrBtn.setEnabled(param);
-        disConn.setEnabled(param);
     }
     /**
      * This method is called from within the constructor to initialize the form.
@@ -77,8 +135,6 @@ public class client extends javax.swing.JFrame {
         jLabel3 = new javax.swing.JLabel();
         uname = new java.awt.TextField();
         sendFile = new javax.swing.JButton();
-        label1 = new java.awt.Label();
-        disConn = new javax.swing.JButton();
         rcptList = new javax.swing.JComboBox();
         addBtn = new javax.swing.JButton();
         rfshBtn = new javax.swing.JButton();
@@ -87,13 +143,19 @@ public class client extends javax.swing.JFrame {
         inbox = new javax.swing.JComboBox();
         rfshInbox = new javax.swing.JButton();
         jLabel4 = new javax.swing.JLabel();
+        ipserver = new java.awt.TextField();
+        jLabel5 = new javax.swing.JLabel();
+        jLabel6 = new javax.swing.JLabel();
+        jSeparator1 = new javax.swing.JSeparator();
+        jSeparator2 = new javax.swing.JSeparator();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setTitle("Simple File Sharing (Client)");
         setResizable(false);
 
         jLabel1.setText("Recipient List");
 
-        jLabel2.setText("Username :");
+        jLabel2.setText("Username");
 
         conn.setText("Connect");
         conn.addActionListener(new java.awt.event.ActionListener() {
@@ -102,7 +164,7 @@ public class client extends javax.swing.JFrame {
             }
         });
 
-        attachBtn.setText("attach");
+        attachBtn.setText("Browse File");
         attachBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 attachBtnActionPerformed(evt);
@@ -110,8 +172,10 @@ public class client extends javax.swing.JFrame {
         });
 
         sRcptList.setEditable(false);
-        sRcptList.setColumns(12);
-        sRcptList.setRows(5);
+        sRcptList.setColumns(1);
+        sRcptList.setLineWrap(true);
+        sRcptList.setRows(2);
+        sRcptList.setWrapStyleWord(true);
         sRcptList.setBorder(javax.swing.BorderFactory.createEtchedBorder());
         jScrollPane1.setViewportView(sRcptList);
 
@@ -125,39 +189,28 @@ public class client extends javax.swing.JFrame {
             }
         });
 
-        sendFile.setText("SEND");
+        sendFile.setText("Send File");
         sendFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 sendFileActionPerformed(evt);
             }
         });
 
-        label1.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
-        label1.setText("SIMPLE FILE SHARING");
-
-        disConn.setText("Disconnect");
-        disConn.setEnabled(false);
-        disConn.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                disConnActionPerformed(evt);
-            }
-        });
-
-        addBtn.setText("add");
+        addBtn.setText("Add");
         addBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 addBtnActionPerformed(evt);
             }
         });
 
-        rfshBtn.setText("refresh");
+        rfshBtn.setText("Refresh");
         rfshBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 rfshBtnActionPerformed(evt);
             }
         });
 
-        clrBtn.setText("clear");
+        clrBtn.setText("Clear List");
         clrBtn.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 clrBtnActionPerformed(evt);
@@ -171,7 +224,7 @@ public class client extends javax.swing.JFrame {
             }
         });
 
-        rfshInbox.setText("Refresh");
+        rfshInbox.setText("Refresh Inbox");
         rfshInbox.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 rfshInboxActionPerformed(evt);
@@ -180,140 +233,136 @@ public class client extends javax.swing.JFrame {
 
         jLabel4.setText("Inbox File List");
 
+        ipserver.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                ipserverActionPerformed(evt);
+            }
+        });
+
+        jLabel5.setText("IP Server");
+
+        jLabel6.setText("Set Up Connection");
+
+        jSeparator1.setOrientation(javax.swing.SwingConstants.VERTICAL);
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
-                .addGap(19, 19, 19)
+                .addContainerGap(20, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(rcptList, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                .addComponent(jLabel2)
-                                .addComponent(jLabel1)
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                        .addComponent(rfshInbox, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(rtrvBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                        .addComponent(inbox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                        .addComponent(jLabel4)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
                                 .addGroup(layout.createSequentialGroup()
-                                    .addComponent(uname, javax.swing.GroupLayout.PREFERRED_SIZE, 99, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                    .addComponent(jLabel3)
                                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(conn))))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addComponent(pathFile, javax.swing.GroupLayout.PREFERRED_SIZE, 215, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addComponent(jLabel3)))
-                    .addGroup(layout.createSequentialGroup()
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
-                            .addComponent(clrBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 73, javax.swing.GroupLayout.PREFERRED_SIZE)
-                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(pathFile, javax.swing.GroupLayout.PREFERRED_SIZE, 241, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(attachBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                            .addComponent(sendFile, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addComponent(jSeparator2)
+                        .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
+                                    .addComponent(jLabel2)
+                                    .addComponent(jLabel5)
+                                    .addComponent(ipserver, javax.swing.GroupLayout.DEFAULT_SIZE, 208, Short.MAX_VALUE)
+                                    .addComponent(uname, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+                                .addComponent(jLabel6)
+                                .addComponent(conn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 135, javax.swing.GroupLayout.PREFERRED_SIZE))
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                            .addComponent(jSeparator1, javax.swing.GroupLayout.PREFERRED_SIZE, 2, javax.swing.GroupLayout.PREFERRED_SIZE)
+                            .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addComponent(jLabel1)
+                                .addComponent(rcptList, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE)
                                 .addGroup(layout.createSequentialGroup()
                                     .addComponent(addBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE)
                                     .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                                    .addComponent(rfshBtn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 182, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGap(0, 0, Short.MAX_VALUE)
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                                        .addComponent(sendFile, javax.swing.GroupLayout.PREFERRED_SIZE, 142, javax.swing.GroupLayout.PREFERRED_SIZE)
-                                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                                        .addComponent(attachBtn))
-                                    .addComponent(disConn, javax.swing.GroupLayout.Alignment.TRAILING)
-                                    .addComponent(rtrvBtn, javax.swing.GroupLayout.Alignment.TRAILING, javax.swing.GroupLayout.PREFERRED_SIZE, 106, javax.swing.GroupLayout.PREFERRED_SIZE)))
-                            .addComponent(inbox, 0, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                            .addGroup(layout.createSequentialGroup()
-                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                                    .addComponent(jLabel4)
-                                    .addComponent(rfshInbox, javax.swing.GroupLayout.PREFERRED_SIZE, 102, javax.swing.GroupLayout.PREFERRED_SIZE))
-                                .addGap(0, 0, Short.MAX_VALUE)))))
-                .addContainerGap())
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addComponent(label1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(117, 117, 117))
+                                    .addComponent(rfshBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 88, javax.swing.GroupLayout.PREFERRED_SIZE))
+                                .addComponent(clrBtn, javax.swing.GroupLayout.PREFERRED_SIZE, 96, javax.swing.GroupLayout.PREFERRED_SIZE)))))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
                 .addContainerGap()
-                .addComponent(label1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                .addGap(3, 3, 3)
-                .addComponent(jLabel2)
-                .addGap(10, 10, 10)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING, false)
-                    .addComponent(conn, javax.swing.GroupLayout.PREFERRED_SIZE, 0, Short.MAX_VALUE)
-                    .addComponent(uname, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(jLabel1)
-                    .addComponent(jLabel3))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(rcptList, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addComponent(pathFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(addBtn)
-                    .addComponent(rfshBtn)
-                    .addComponent(sendFile)
-                    .addComponent(attachBtn))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING, false)
-                    .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                    .addGroup(javax.swing.GroupLayout.Alignment.LEADING, layout.createSequentialGroup()
-                        .addComponent(jLabel4)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                        .addComponent(inbox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
-                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
+                        .addGap(0, 4, Short.MAX_VALUE)
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addGap(8, 8, 8)
+                                .addComponent(jLabel1)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(rcptList, javax.swing.GroupLayout.PREFERRED_SIZE, 24, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                                    .addComponent(addBtn)
+                                    .addComponent(rfshBtn))
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jScrollPane1, javax.swing.GroupLayout.PREFERRED_SIZE, 77, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(clrBtn))
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(jLabel6)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(jLabel2)
+                                .addGap(5, 5, 5)
+                                .addComponent(uname, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addGap(4, 4, 4)
+                                .addComponent(jLabel5)
+                                .addGap(1, 1, 1)
+                                .addComponent(ipserver, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                                .addComponent(conn, javax.swing.GroupLayout.PREFERRED_SIZE, 47, javax.swing.GroupLayout.PREFERRED_SIZE))))
+                    .addComponent(jSeparator1))
+                .addGap(11, 11, 11)
+                .addComponent(jSeparator2, javax.swing.GroupLayout.PREFERRED_SIZE, 3, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED, 9, Short.MAX_VALUE)
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.TRAILING)
+                    .addGroup(layout.createSequentialGroup()
                         .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                            .addComponent(rtrvBtn)
-                            .addComponent(rfshInbox))
-                        .addGap(0, 29, Short.MAX_VALUE)))
-                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                            .addComponent(jLabel3)
+                            .addComponent(pathFile, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                        .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                        .addComponent(attachBtn))
+                    .addComponent(sendFile, javax.swing.GroupLayout.PREFERRED_SIZE, 50, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jLabel4)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(inbox, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
-                    .addComponent(clrBtn)
-                    .addComponent(disConn, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
-                .addGap(6, 6, 6))
+                    .addComponent(rtrvBtn)
+                    .addComponent(rfshInbox))
+                .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
 
     private void connActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_connActionPerformed
-        try {
-            if (uname.getText().equals("")){
-                throw new Exception("Silahkan isi username terlebih dahulu",null);
-            }
-            server = new Socket("localhost",6060);
-            bos = new BufferedOutputStream(server.getOutputStream());
-            oos = new ObjectOutputStream(server.getOutputStream());
-            ois = new ObjectInputStream(server.getInputStream());
-            conn.setEnabled(false);
-            uname.setEnabled(false);
-            disConn.setEnabled(true);
-            this.setEnabling(true);
-            oos.writeUTF(uname.getText());
-            oos.flush();
-            
-            String msg;
-            msg = ois.readUTF();
-            File file = new File("D:/" + uname.getText());
-            if (!file.exists()) {
-                if (file.mkdir()) {
-                        System.out.println("Directory is created!");
-                } else {
-                        System.out.println("Failed to create directory!");
-                }
-            }
-            System.out.println(msg);
-            
-        } catch (IOException ex) {
-            JOptionPane.showMessageDialog(null,"Server sedang offline");
+        if(conn.getText().equals("Connect")){
+            connectTo();
+            if(connectFlag == true)
+                conn.setText("Disconnect");
         }
-        catch (Exception e){
-            JOptionPane.showMessageDialog(null,e.getMessage());
+        else{
+            disconnectFrom();
+            if(connectFlag == false)
+                conn.setText("Connect");
         }
+        
     }//GEN-LAST:event_connActionPerformed
 
     private void attachBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_attachBtnActionPerformed
@@ -368,19 +417,6 @@ public class client extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(null,e.getMessage());
         }
     }//GEN-LAST:event_sendFileActionPerformed
-
-    private void disConnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_disConnActionPerformed
-        try {
-            oos.writeUTF("QUIT");
-            oos.flush();
-            server.close();
-            this.setEnabling(false);
-            conn.setEnabled(true);
-            uname.setEnabled(true);
-        } catch (IOException ex) {
-            Logger.getLogger(client.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }//GEN-LAST:event_disConnActionPerformed
 
     private void addBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_addBtnActionPerformed
         try{
@@ -475,6 +511,10 @@ public class client extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_rfshInboxActionPerformed
 
+    private void ipserverActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_ipserverActionPerformed
+        // TODO add your handling code here:
+    }//GEN-LAST:event_ipserverActionPerformed
+
     /**
      * @param args the command line arguments
      */
@@ -515,14 +555,17 @@ public class client extends javax.swing.JFrame {
     private javax.swing.JButton attachBtn;
     private javax.swing.JButton clrBtn;
     private javax.swing.JButton conn;
-    private javax.swing.JButton disConn;
     private javax.swing.JComboBox inbox;
+    private java.awt.TextField ipserver;
     private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabel2;
     private javax.swing.JLabel jLabel3;
     private javax.swing.JLabel jLabel4;
+    private javax.swing.JLabel jLabel5;
+    private javax.swing.JLabel jLabel6;
     private javax.swing.JScrollPane jScrollPane1;
-    private java.awt.Label label1;
+    private javax.swing.JSeparator jSeparator1;
+    private javax.swing.JSeparator jSeparator2;
     private javax.swing.JTextField pathFile;
     private javax.swing.JComboBox rcptList;
     private javax.swing.JButton rfshBtn;
