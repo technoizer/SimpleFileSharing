@@ -7,8 +7,6 @@
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -32,9 +30,6 @@ public class threadClient implements Runnable{
     private ObjectInputStream ois = null;
     private final SocketAddress sa;
     private String username;
-    private FileInputStream fis = null;
-    private FileOutputStream fos = null;
-    private ArrayList<String> Recipient = new ArrayList<>();
     private ContentFile MyFile;
     private ArrayList<ContentFile> Files = new ArrayList<>();
     public threadClient (Socket sockcli, ArrayList<threadClient> t){
@@ -52,15 +47,27 @@ public class threadClient implements Runnable{
             dis = new DataInputStream(this.getSockcli().getInputStream());
             
             String msg;
+            boolean isExist = false;
+            msg = ois.readUTF();
+            for(int i=0;i<this.alThread.size();i++){                
+                if(msg.equals(this.alThread.get(i).getUsername())){
+                    isExist = true;
+                    break;
+                }
+            }
+            
+            if(isExist)
+                throw new Exception("EXIST",null);
+            
             oos.writeUTF("HALO");
             oos.flush();
             
-            msg = ois.readUTF();
+            
             System.out.print(msg + "\n");
             this.setUsername(msg);
             
             while ((msg = ois.readUTF()) != null ){
-                System.out.print(msg + "\n");
+                System.out.println(msg);
                 if (msg.equals("LIST")){
                     this.sendList();
                 }
@@ -109,7 +116,16 @@ public class threadClient implements Runnable{
             Logger.getLogger(threadClient.class.getName()).log(Level.SEVERE, null, ex);
         } catch (ClassNotFoundException ex) {
             Logger.getLogger(threadClient.class.getName()).log(Level.SEVERE, null, ex);
-        } 
+        } catch (Exception e) {
+            try {
+                oos.writeUTF(e.getMessage());
+                oos.flush();
+            } catch (IOException ex) {
+                Logger.getLogger(threadClient.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            //System.out.println(e.getMessage());
+            //Logger.getLogger(threadClient.class.getName()).log(Level.SEVERE, null, e);
+        }  
     }
     public synchronized void sendObject(ArrayList<ContentFile> Files, String names) throws IOException
     {
@@ -142,7 +158,7 @@ public class threadClient implements Runnable{
         threadClient tc = null;
         for(int i=0; i<this.alThread.size(); i++){
             tc  = this.alThread.get(i);
-            //if(tc.getUsername()!=this.getUsername())
+            //if(!tc.getUsername().equals(this.getUsername()))
                 names.add(tc.getUsername());
         }
         ListString baru = new ListString();

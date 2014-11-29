@@ -2,6 +2,7 @@
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketException;
 import java.util.ArrayList;
 import javax.swing.JOptionPane;
 
@@ -95,19 +96,26 @@ public class server extends javax.swing.JFrame {
             ArrayList<threadClient> alThread = new ArrayList<>();
             server = new ServerSocket(6060);            
             while (true){
-                client = server.accept();
-                synchronized(alThread)
-                {
-                    //JOptionPane.showMessageDialog(null,Baru.getUsername() + " " + Baru.getPassword());
-                    threadClient tc = new threadClient(client,alThread);
-                    alThread.add(tc);
-                    Thread t = new Thread(tc);
-                    t.start();
+                try{
+                    client = server.accept();
+                    synchronized(alThread)
+                    {
+                        //JOptionPane.showMessageDialog(null,Baru.getUsername() + " " + Baru.getPassword());
+                        threadClient tc = new threadClient(client,alThread);
+                        alThread.add(tc);
+                        Thread t = new Thread(tc);
+                        t.start();
+                    }
                 }
+                catch(SocketException ex){
+                    System.out.println(Integer.toString(client.getPort()) + "Disconnect");
+                }
+                
             }
         } catch (IOException ex) {
             JOptionPane.showMessageDialog(null,"No Client Available");
         }
+        
     }//GEN-LAST:event_turnOnActionPerformed
 
     /**
